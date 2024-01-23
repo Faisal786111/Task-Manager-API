@@ -2,9 +2,10 @@ const express = require("express");
 require("./db/mongoose");
 const userRouter = require("./routers/user");
 const taskRouter = require("./routers/task");
+const path = require('node:path');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT;
 
 //regist middleware
 // app.use((req , res , next)=>{
@@ -28,32 +29,46 @@ app.use(taskRouter);
 const jwt = require("jsonwebtoken");
 
 const myFunction = async ()=>{
-   const token = jwt.sign({_id:"faisal"} , "faisal786" , {expiresIn: "7 days"});
+   const token = jwt.sign({_id:"faisal"} , process.env.JWT_SECRET , {expiresIn: "7 days"});
    console.log(token);
 
-   const data = jwt.verify(token , "faisal786");
+   const data = jwt.verify(token , process.env.JWT_SECRET);
    console.log(data);
 }
 
 myFunction();
+
+const multer = require("multer");
+const upload = multer({
+    dest : "images",
+    limits : {
+        fileSize:1000000 //1MB
+    },
+    fileFilter(req , file , cb){
+        if(!file.originalname.match(/\.(docx|doc)$/)){
+            return cb(new Error("Please upload a Word document."));
+        }
+
+        cb(undefined , true);
+    }
+});
+
+app.post("/upload",upload.single("upload"),(req , res)=>{
+    try{
+        res.send("Image is uploaded");
+
+    }catch(e){
+        res.send(e.message);
+    }
+}, (error , req , res , next)=>{
+    res.status(400).send(error.message);
+})
+
+
+
 
 
 app.listen(port , ()=>{
     console.log("Server is connected! "+ port);
 })
 
-const Task = require("./models/task");
-const User = require("./models/user");
-
-const main = async()=>{
-      
-    // const task =await Task.findById("65aa06a7538a18c27530ff7d");
-    // await task.populate("owner");
-    // console.log(task.owner);
-
-    // const user = await User.findById("65aa05d1e7dfa10999210fd0");
-    // await user.populate("tasks");
-    // console.log(user.tasks);
-}
-
-main();
